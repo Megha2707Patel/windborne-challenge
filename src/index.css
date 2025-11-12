@@ -1,0 +1,3 @@
+/* keep CRA defaults minimal */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
