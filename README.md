@@ -1,6 +1,6 @@
 # 🌬️ WindBorne Real-Time Balloon & Weather Tracking System
 ### Real-Time Balloon Tracking Dashboard with Live Weather Integration  
-## Portfolio : https://windborne-challenge-sand.vercel.app/
+## Project link : https://windborne-challenge-sand.vercel.app/
 **Created by: Megha Patel**
 
 ---
