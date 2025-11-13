@@ -1,70 +1,213 @@
-# Getting Started with Create React App
+# 🌬️ WindBorne Constellation — Last 24 Hours  
+### Real-Time Balloon Tracking Dashboard with Live Weather Integration  
+**Created by: Megha Patel**
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+---
 
-## Available Scripts
+## 🚀 Overview
 
-In the project directory, you can run:
+This project visualizes the **last 24 hours of WindBorne Systems' global weather balloon telemetry**.  
+Each hour’s balloon snapshot is fetched from:
 
-### `npm start`
+```
+https://a.windbornesystems.com/treasure/00.json
+https://a.windbornesystems.com/treasure/01.json
+...
+https://a.windbornesystems.com/treasure/23.json
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Because the API is **undocumented, inconsistent, and sometimes corrupted**, a fully **robust normalization layer** is implemented to safely parse any data it returns.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+To enrich the balloon data, the project also integrates the **Open-Meteo API**, which provides **real-time weather** at each balloon’s latest location.
 
-### `npm test`
+The final result is an interactive dashboard showing:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Balloon positions from the last 24 hours  
+- Individual balloon history trails  
+- Live temperature, windspeed, and weather codes  
+- Refresh controls  
+- Ability to filter by balloon ID  
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🎈 Why Combine Balloon Telemetry with Weather?
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+WindBorne’s balloons float at various altitudes, collecting atmospheric data.  
+Weather conditions such as **temperature, wind direction, and windspeed** influence balloon drift.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+By combining both datasets, we can:
 
-### `npm run eject`
+- Understand atmospheric behavior around each balloon  
+- Visualize evolving weather systems  
+- Inspect high-altitude dynamics vs. surface weather  
+- Gain insight into environmental factors affecting balloon flight  
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+This project demonstrates the real-world challenge of **merging telemetry streams with external environmental datasets.**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 📡 Data Pipeline Architecture
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### **1. Fetch 24 hours of telemetry (00–23)**
+The app requests all 24 endpoints in parallel.
 
-## Learn More
+Telemetry may be:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Arrays like `[lat, lon, alt]`  
+- Objects with inconsistent property names  
+- Nested structures  
+- Corrupted JSON  
+- Empty files  
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### **2. Robust normalization**
+A custom normalization function safely:
 
-### Code Splitting
+- Parses malformed JSON  
+- Detects the WindBorne array format  
+- Extracts `lat`, `lon`, `alt`  
+- Extracts or synthesizes IDs  
+- Applies timestamps when available  
+- Tags data with `hourIndex` for sorting  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### **3. Build balloon tracks**
+Telemetry is grouped by balloon ID:
 
-### Analyzing the Bundle Size
+```json
+{
+  "id": "WB-5-0",
+  "latestLat": -11.89,
+  "latestLon": 63.25,
+  "history": [
+    { "lat": -11.89, "lon": 63.25, "ts": null, "h": 5 },
+    ...
+  ]
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### **4. Fetch real-time weather for each balloon**
+Using:
 
-### Making a Progressive Web App
+```
+https://api.open-meteo.com/v1/forecast?latitude=<lat>&longitude=<lon>&current_weather=true
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Weather includes:
 
-### Advanced Configuration
+- temperature  
+- windspeed  
+- winddirection  
+- weathercode  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### **5. Render results in React**
+Components include:
 
-### Deployment
+- **Controls** → Refresh button + balloon filter  
+- **BalloonList** → Display balloon entries  
+- **ErrorBanner** → Show warnings for corrupted files  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## ☁️ Sample Weather Response
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```json
+{
+  "latitude": 63.5,
+  "longitude": -59.375,
+  "current_weather": {
+    "temperature": 1.3,
+    "windspeed": 55.1,
+    "winddirection": 187,
+    "weathercode": 2
+  }
+}
+```
+
+---
+
+## ⚠️ Important Note About CORS
+
+WindBorne’s API **does not include CORS headers**, so:
+
+- All data loads **perfectly when running locally**
+- Browser fetches from deployed front-end apps are **blocked**
+- This is a **limitation of the public API**, not the project
+
+WindBorne engineers can test the code directly from GitHub without any restrictions.
+
+This project intentionally remains **front-end–only**, as the challenge does not require implementing a backend proxy.
+
+---
+
+## 🛠 Tech Stack
+
+- **React (CRA)**
+- **JavaScript (ES6+)**
+- **Open-Meteo API**
+- **WindBorne Telemetry API**
+- **CSS for styling**
+- **Vercel for hosting**
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+ ├─ components/
+ │   ├─ BalloonList.js
+ │   ├─ Controls.js
+ │   └─ ErrorBanner.js
+ ├─ lib/
+ │   ├─ windborneApi.js     ← robust WindBorne parser
+ │   ├─ externalApi.js      ← Open-Meteo integration
+ │   └─ dataUtils.js
+ ├─ App.js
+ └─ index.js
+```
+
+---
+
+## ▶️ Running Locally
+
+```bash
+git clone https://github.com/Megha2707Patel/windborne-challenge.git
+cd windborne-challenge
+npm install
+npm start
+```
+
+Open:
+
+```
+http://localhost:3000
+```
+
+Local runs avoid all CORS issues and show full data.
+
+---
+
+## 🔮 Future Improvements
+
+- Interactive map using Leaflet or Mapbox  
+- Altitude charts & weather trend graphs  
+- Server-side proxy to bypass CORS (optional)  
+- Global wind field visualization  
+- Balloon drift prediction models  
+
+---
+
+## 🧑‍💻 About Me
+
+I’m passionate about building **interactive, data-driven web applications** and solving real-world problems with clean engineering and thoughtful UI design.
+
+This project was a perfect blend of:
+
+- Real-time APIs  
+- Geospatial data  
+- Weather analytics  
+- Resilient data parsing  
+- Front-end engineering  
+
+If you'd like to explore more of my work:  
+**Portfolio:** https://megha-patel-portfolio.vercel.app/
+
